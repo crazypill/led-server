@@ -111,7 +111,7 @@ typedef struct tagNVSettings
   int b;
   int w;
   int rainbow;
-  int reserved0;
+  int brightness;
   int reserved1;
   int reserved2;
 } NVSettings;
@@ -282,7 +282,6 @@ void setup()
 
   webServer.on( "/white", HTTP_POST, []() {
     String w = webServer.arg("w");
-    
     single_blink();
     set_white( w.toInt() );
     writeNVSettings();
@@ -310,6 +309,25 @@ void setup()
     writeNVSettings();
     webServer.send( 404, "text/plain", "rainbow\n" );
   } );
+
+
+webServer.on( "/brightness", HTTP_POST, []() {
+    String z = webServer.arg("b");
+    single_blink();
+    set_brightness( z.toInt() );
+    writeNVSettings();
+    webServer.send( 404, "text/plain", "brightness: " + String( z ) + "\n" );
+
+#ifdef USE_OLED
+    display.clearDisplay();
+    display.setCursor( 2, 2 );
+    display.print( "brightness: " );  
+    display.println(  String( z ) );
+    display.display();
+#endif    
+  } );
+
+
 
   webServer.begin();
   Serial.println( "Web server started" );
@@ -368,6 +386,17 @@ void set_white( int w )
 }
 
 
+void set_brightness( int z )
+{
+  if( z > 255 )
+      z = 255;
+  if( z < 0 )
+      z = 0;
+    
+  sSettings.brightness = z;
+}
+
+
 void fade_up_rgb( int r, int g, int b, int steps, useconds_t latency )
 {
     float dr = r / steps;
@@ -407,13 +436,15 @@ void fade_to_rgb( int r, int g, int b, int from_r, int from_g, int from_b, int s
 
 bool fade_to_rgb_with_state( int r, int g, int b, int from_r, int from_g, int from_b, int steps, useconds_t latency )
 {
+  int brightnessInverse = 255 - sSettings.brightness;
+   
   if( sFade_step >= steps )
   {
     sFade_step = 0;
     return true;
   }
     
-  blend_rgb( r, g, b, from_r, from_g, from_b, sFade_step * (1.0f / steps) );
+  blend_rgb( r - brightnessInverse, g - brightnessInverse, b - brightnessInverse, from_r - brightnessInverse, from_g - brightnessInverse, from_b - brightnessInverse, sFade_step * (1.0f / steps) );
   delayMicroseconds( latency );  
   ++sFade_step;
   return false; // not done
