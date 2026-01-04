@@ -414,7 +414,7 @@ void fade_up_rgb( int r, int g, int b, int steps, useconds_t latency )
 // mu = 0..1 (0 = rgb1 and 1 = rgb2, anywhere between is a blend)
 void blend_rgb( int r1, int g1, int b1, int r2, int g2, int b2, float mu )
 {
-    int brightnessInverse = 255 - sSettings.brightness;
+    float brightness = sSettings.brightness / 100.0f; // brightness goes 0-100%
   
     if( mu < 0.0f )
         mu = 0.0f;
@@ -422,23 +422,11 @@ void blend_rgb( int r1, int g1, int b1, int r2, int g2, int b2, float mu )
         mu = 1.0f;
 
     float oneMinusAlpha = 1.0f - mu;
-    int r = r2 * mu + (r1 * oneMinusAlpha);
-    int g = g2 * mu + (g1 * oneMinusAlpha);
-    int b = b2 * mu + (b1 * oneMinusAlpha);
-
-    int rb = r - brightnessInverse;
-    if( rb < 0 )
-      rb = 0;
-      
-    int gb = g - brightnessInverse;
-    if( gb < 0 )
-      gb = 0;
-
-    int bb = b - brightnessInverse;
-    if( bb < 0 )
-      bb = 0;
+    int r = (r2 * mu + (r1 * oneMinusAlpha)) * brightness;
+    int g = (g2 * mu + (g1 * oneMinusAlpha)) * brightness;
+    int b = (b2 * mu + (b1 * oneMinusAlpha)) * brightness;
     
-    set_rgb( rb, gb, bb );    
+    set_rgb( r, g, b );    
 }
 
 
